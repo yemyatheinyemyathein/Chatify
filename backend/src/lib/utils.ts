@@ -1,6 +1,6 @@
 import jwt from "jsonwebtoken";
 import "dotenv/config";
-import { ENV } from "./ENV";
+import { ENV } from "./ENV.ts";
 export const generateToken = (userId, res)=>{
 
     const {JWT_SECRET} = ENV;
