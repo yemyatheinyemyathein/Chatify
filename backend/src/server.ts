@@ -1,4 +1,5 @@
 import express from "express";
+import CookieParser from "cookie-parser";
 import authRoutes from "./routes/auth.route.ts";
 import messageRoutes from "./routes/message.route.ts";
 import path from "path";
@@ -12,6 +13,7 @@ const __dirname = path.resolve();
 const PORT = ENV.PORT || 3000;
 
 app.use(express.json());
+app.use(CookieParser())
 app.use("/api/auth", authRoutes);
 app.use("/api/messages", messageRoutes);
 
