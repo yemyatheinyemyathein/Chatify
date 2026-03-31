@@ -1,14 +1,14 @@
 import express from "express";
-import { signup } from "../controllers/auth.controller.ts";
-
+import { signup, login, logout, updateProfile } from "../controllers/auth.controller.ts";
+import { protectRoute } from "../middleware/auth.middleware.ts";
+import { arcjetProtection } from "../middleware/arcjet.middleware.ts";
 const router = express.Router();
 
-router.get('/signup', signup)
-router.get('/login', (req,res) => {
-    res.send("Login Router");
-})
-router.get('/logout', (req,res) => {
-    res.send("Logout Router");
-})
+router.use(arcjetProtection)
+router.post('/signup', signup);
+router.post('/login', login);
+router.post('/logout', logout);
+router.post('/update-profile', protectRoute, updateProfile);
+router.get("/check", protectRoute, (req:any, res) => res.status(200).json(req.user));
 
 export default router;
