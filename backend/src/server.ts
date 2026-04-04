@@ -6,14 +6,21 @@ import path from "path";
 import { connectDB } from "./lib/db.ts";
 import dns from "node:dns/promises";
 import { ENV } from "./lib/ENV.ts";
+import cors from "cors";
 dns.setServers(["1.1.1.1"]);
 
 const app = express();
 const __dirname = path.resolve();
 const PORT = ENV.PORT || 3000;
 
+app.use(
+  cors({
+    origin: ENV.CLIENT_URL,
+    credentials: true,
+  })
+);
 app.use(express.json());
-app.use(CookieParser())
+app.use(CookieParser());
 app.use("/api/auth", authRoutes);
 app.use("/api/messages", messageRoutes);
 
