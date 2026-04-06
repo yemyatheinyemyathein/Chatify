@@ -1,20 +1,9 @@
 import { create } from "zustand";
 import { axiosInstance } from "../lib/axios";
 import toast from "react-hot-toast";
+import { useAuthStore } from "./useAuthStore";
 
-interface ChatState {
-  allContacts: unknown[];
-  chats: unknown[];
-  messages: unknown[];
-  activeTab: string;
-  selectedUser: unknown | null;
-  isUsersLoading: boolean;
-  isMessagesLoading: boolean;
-  isSoundEnabled: unknown;
-  toggleSound: () => void;
-}
-
-export const useChatStore = create<ChatState>((set, get) => ({
+export const useChatStore = create((set, get) => ({
   allContacts: [],
   chats: [],
   messages: [],
@@ -22,15 +11,16 @@ export const useChatStore = create<ChatState>((set, get) => ({
   selectedUser: null,
   isUsersLoading: false,
   isMessagesLoading: false,
-
-  isSoundEnabled: localStorage.getItem("isSoundEnabled") === true,
+  isSoundEnabled: JSON.parse(localStorage.getItem("isSoundEnabled")) === true,
 
   toggleSound: () => {
     localStorage.setItem("isSoundEnabled", !get().isSoundEnabled);
     set({ isSoundEnabled: !get().isSoundEnabled });
   },
+
   setActiveTab: (tab) => set({ activeTab: tab }),
   setSelectedUser: (selectedUser) => set({ selectedUser }),
+
   getAllContacts: async () => {
     set({ isUsersLoading: true });
     try {
@@ -53,4 +43,5 @@ export const useChatStore = create<ChatState>((set, get) => ({
       set({ isUsersLoading: false });
     }
   },
+
 }));
