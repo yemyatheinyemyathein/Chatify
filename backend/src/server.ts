@@ -6,14 +6,24 @@ import path from "path";
 import { connectDB } from "./lib/db.ts";
 import dns from "node:dns/promises";
 import { ENV } from "./lib/ENV.ts";
+import cors from "cors";
 dns.setServers(["1.1.1.1"]);
 
 const app = express();
 const __dirname = path.resolve();
 const PORT = ENV.PORT || 3000;
 
-app.use(express.json());
-app.use(CookieParser())
+app.use(
+  cors({
+    origin: ENV.CLIENT_URL,
+    credentials: true,
+  })
+);
+app.use(CookieParser());
+app.use(express.json({ limit: '50mb' }));
+
+// Increase the limit for URL-encoded data
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.use("/api/auth", authRoutes);
 app.use("/api/messages", messageRoutes);
 
