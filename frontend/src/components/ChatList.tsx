@@ -6,7 +6,7 @@ import UserLoadingSkeleton from "./UserLoadingSkeleton";
 
 function ChatList() {
   const { getMyChatPartners, chats, isUsersLoading, setSelectedUser } = useChatStore();
-  // const { onlineUsers } = useAuthStore();
+  const { onlineUsers } = useAuthStore();
 
   useEffect(() => {
     getMyChatPartners();
@@ -24,7 +24,7 @@ function ChatList() {
           onClick={() => setSelectedUser(chat)}
         >
           <div className="flex items-center gap-3">
-            <div className={`avatar avatar-online`}>
+            <div className={`avatar ${onlineUsers.includes(chat._id) ? "avatar-online" : "avatar-offline"}`}>
               <div className="size-12 rounded-full">
                 <img src={chat.profilePic || "/avatar.png"} alt={chat.fullName} />
               </div>

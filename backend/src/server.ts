@@ -7,9 +7,9 @@ import { connectDB } from "./lib/db.ts";
 import dns from "node:dns/promises";
 import { ENV } from "./lib/ENV.ts";
 import cors from "cors";
+import { app, server } from "./lib/socket.ts";
 dns.setServers(["1.1.1.1"]);
 
-const app = express();
 const __dirname = path.resolve();
 const PORT = ENV.PORT || 3000;
 
@@ -20,7 +20,7 @@ app.use(
   })
 );
 app.use(CookieParser());
-app.use(express.json({ limit: '50mb' }));
+app.use(express.json({ limit: '5mb' }));
 
 // Increase the limit for URL-encoded data
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
@@ -35,7 +35,7 @@ if (ENV.NODE_ENV === "production") {
   });
 }
 
-app.listen(PORT, () => {
+server.listen(PORT, () => {
   console.log("Server is running on Port: " + PORT);
   connectDB();
 });
