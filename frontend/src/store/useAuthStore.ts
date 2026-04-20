@@ -1,23 +1,56 @@
 import { create } from "zustand";
 import { axiosInstance } from "../lib/axios";
 import toast from "react-hot-toast";
-import { io } from "socket.io-client";
+import { io, Socket } from "socket.io-client";
+import { AxiosError } from "axios";
 
-const BASE_URL = import.meta.env.MODE === "development" ? "http://localhost:3000" : "/"
+// 1. Define the User shape
+interface User {
+  _id: string;
+  fullName: string;
+  email: string;
+  profilePic?: string;
+  createdAt?: string;
+}
 
-export const useAuthStore = create((set, get) => ({
+// 2. Define the Store's State and Actions
+interface AuthStore {
+  authUser: User | null;
+  onlineUsers: string[];
+  isCheckingAuth: boolean;
+  isSigningUp: boolean;
+  isLoggingIn: boolean;
+  socket: Socket | null;
+
+  checkAuth: () => Promise<void>;
+  signup: (data: unknown) => Promise<void>;
+  login: (data: unknown) => Promise<void>;
+  LogOut: () => Promise<void>;
+  updateProfile: (formData: FormData | { profilePic: string }) => Promise<void>;
+  connectSocket: () => void;
+  disconnectSocket: () => void;
+}
+
+// Interface for API error responses
+interface ApiError {
+  message: string;
+}
+
+const BASE_URL = import.meta.env.MODE === "development" ? "http://localhost:3000" : "/";
+
+export const useAuthStore = create<AuthStore>((set, get) => ({
   authUser: null,
   onlineUsers: [],
   isCheckingAuth: true,
   isSigningUp: false,
   isLoggingIn: false,
   socket: null,
+
   checkAuth: async () => {
     try {
       const res = await axiosInstance.get("/auth/check");
       set({ authUser: res.data });
       get().connectSocket();
-
     } catch (error) {
       console.log("Error in authCheck : ", error);
       set({ authUser: null });
@@ -34,12 +67,11 @@ export const useAuthStore = create((set, get) => ({
       toast.success("Account created successfully");
       get().connectSocket();
     } catch (error) {
-      toast.error(error.response.data.message);
+      const axiosError = error as AxiosError<ApiError>;
+      toast.error(axiosError.response?.data?.message || "An error occurred");
       console.log("Error in signup: ", error);
     } finally {
-      set({
-        isSigningUp: false,
-      });
+      set({ isSigningUp: false });
     }
   },
 
@@ -51,12 +83,11 @@ export const useAuthStore = create((set, get) => ({
       toast.success("Logged in successfully");
       get().connectSocket();
     } catch (error) {
-      toast.error(error.response.data.message);
+      const axiosError = error as AxiosError<ApiError>;
+      toast.error(axiosError.response?.data?.message || "An error occurred");
       console.log("Error in Login: ", error);
     } finally {
-      set({
-        isLoggingIn: false,
-      });
+      set({ isLoggingIn: false });
     }
   },
 
@@ -78,24 +109,37 @@ export const useAuthStore = create((set, get) => ({
       set({ authUser: res.data });
       toast.success("Profile updated successfully!");
     } catch (error) {
+      const axiosError = error as AxiosError<ApiError>;
       console.log("Error in update profile:", error);
-      toast.error(error.response?.data?.message || "Update failed");
+      toast.error(axiosError.response?.data?.message || "Update failed");
     }
   },
 
-  connectSocket : () => {
-    const {authUser} = get()
-    if(!authUser || get().socket?.connected) return 
-    const socket = io(BASE_URL, {withCredentials: true});
-    socket.connect();
-    set({socket});
+  connectSocket: () => {
+    const { authUser } = get();
+    // Safety check for socket.connected to avoid null errors
+    if (!authUser || get().socket?.connected) return;
 
-    socket.on("getOnlineUsers", (userIds) => {
-      set({onlineUsers: userIds})
-    })
+    const socket = io(BASE_URL, {
+      withCredentials: true,
+      query: {
+        userId: authUser._id,
+      },
+    });
+
+    socket.connect();
+    set({ socket });
+
+    socket.on("getOnlineUsers", (userIds: string[]) => {
+      set({ onlineUsers: userIds });
+    });
   },
 
   disconnectSocket: () => {
-    if (get().socket?.connected) { get().socket.disconnect();}
+    const socket = get().socket;
+    if (socket?.connected) {
+      socket.disconnect();
+      set({ socket: null });
+    }
   },
 }));

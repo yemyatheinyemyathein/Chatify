@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useRef, useState, type FormEvent, type ChangeEvent } from "react";
 import useKeyboardSound from "../hooks/useKeyboardSound";
 import { useChatStore } from "../store/useChatStore";
 import toast from "react-hot-toast";
@@ -6,36 +6,44 @@ import { ImageIcon, SendIcon, XIcon } from "lucide-react";
 
 function MessageInput() {
   const { playRandomKeyStrokeSound } = useKeyboardSound();
-  const [text, setText] = useState("");
-  const [imagePreview, setImagePreview] = useState(null);
+  const [text, setText] = useState<string>("");
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
 
-  const fileInputRef = useRef(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { sendMessage, isSoundEnabled } = useChatStore();
 
-  const handleSendMessage = (e) => {
+  const handleSendMessage = async (e: FormEvent) => {
     e.preventDefault();
     if (!text.trim() && !imagePreview) return;
     if (isSoundEnabled) playRandomKeyStrokeSound();
 
-    sendMessage({
-      text: text.trim(),
-      image: imagePreview,
-    });
-    setText("");
-    setImagePreview("");
-    if (fileInputRef.current) fileInputRef.current.value = "";
+    try {
+      await sendMessage({
+        text: text.trim(),
+        image: imagePreview || undefined,
+      });
+      setText("");
+      setImagePreview(null);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    } catch (error) {
+      console.error("Failed to send message:", error);
+    }
   };
 
-  const handleImageChange = (e) => {
-    const file = e.target.files[0];
+  const handleImageChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
     if (!file.type.startsWith("image/")) {
       toast.error("Please select an image file");
       return;
     }
 
     const reader = new FileReader();
-    reader.onloadend = () => setImagePreview(reader.result);
+    reader.onloadend = () => {
+      setImagePreview(reader.result as string);
+    };
     reader.readAsDataURL(file);
   };
 
@@ -71,7 +79,7 @@ function MessageInput() {
           value={text}
           onChange={(e) => {
             setText(e.target.value);
-            isSoundEnabled && playRandomKeyStrokeSound();
+            if (isSoundEnabled) playRandomKeyStrokeSound();
           }}
           className="flex-1 bg-slate-800/50 border border-slate-700/50 rounded-lg py-2 px-4"
           placeholder="Type your message..."
@@ -88,9 +96,8 @@ function MessageInput() {
         <button
           type="button"
           onClick={() => fileInputRef.current?.click()}
-          className={`bg-slate-800/50 text-slate-400 hover:text-slate-200 rounded-lg px-4 transition-colors ${
-            imagePreview ? "text-cyan-500" : ""
-          }`}
+          className={`bg-slate-800/50 text-slate-400 hover:text-slate-200 rounded-lg px-4 transition-colors ${imagePreview ? "text-cyan-500" : ""
+            }`}
         >
           <ImageIcon className="w-5 h-5" />
         </button>
@@ -105,4 +112,5 @@ function MessageInput() {
     </div>
   );
 }
+
 export default MessageInput;

@@ -15,12 +15,18 @@ function ChatContainer() {
     subscribeToMessages,
     unsubscribeFromMessages,
   } = useChatStore();
+  
   const { authUser } = useAuthStore();
-  const messageEndRef = useRef(null);
+
+  // 1. Type the scroll reference
+  const messageEndRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
-    getMessagesByUserId(selectedUser._id);
-    subscribeToMessages();
+    // 2. Safety check: only fetch if a user is selected
+    if (selectedUser?._id) {
+      getMessagesByUserId(selectedUser._id);
+      subscribeToMessages();
+    }
 
     return () => unsubscribeFromMessages();
   }, [selectedUser, getMessagesByUserId, subscribeToMessages, unsubscribeFromMessages]);
@@ -30,6 +36,9 @@ function ChatContainer() {
       messageEndRef.current.scrollIntoView({ behavior: "smooth" });
     }
   }, [messages]);
+
+  // 3. Early return if required data is missing to avoid runtime errors
+  if (!selectedUser || !authUser) return null;
 
   return (
     <>

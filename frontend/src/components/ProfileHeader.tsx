@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, type ChangeEvent } from "react";
 import { LogOutIcon, VolumeOffIcon, Volume2Icon } from "lucide-react";
 import { useAuthStore } from "../store/useAuthStore";
 import { useChatStore } from "../store/useChatStore";
@@ -8,23 +8,26 @@ const mouseClickSound = new Audio("/sounds/mouse-click.mp3");
 function ProfileHeader() {
   const { LogOut, authUser, updateProfile } = useAuthStore();
   const { isSoundEnabled, toggleSound } = useChatStore();
-  const [selectedImg, setSelectedImg] = useState(null);
+  
+  const [selectedImg, setSelectedImg] = useState<string | null>(null);
 
-  const fileInputRef = useRef(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  const handleImageUpload = (e) => {
-    const file = e.target.files[0];
+  const handleImageUpload = (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
     if (!file) return;
 
     const reader = new FileReader();
     reader.readAsDataURL(file);
 
     reader.onloadend = async () => {
-      const base64Image = reader.result;
+      const base64Image = reader.result as string;
       setSelectedImg(base64Image);
       await updateProfile({ profilePic: base64Image });
     };
   };
+
+  if (!authUser) return null;
 
   return (
     <div className="p-6 border-b border-slate-700/50">
@@ -33,8 +36,9 @@ function ProfileHeader() {
           {/* AVATAR */}
           <div className="avatar avatar-online">
             <button
+              type="button"
               className="size-14 rounded-full overflow-hidden relative group"
-              onClick={() => fileInputRef.current.click()}
+              onClick={() => fileInputRef.current?.click()}
             >
               <img
                 src={selectedImg || authUser.profilePic || "/avatar.png"}
@@ -55,7 +59,6 @@ function ProfileHeader() {
             />
           </div>
 
-          {/* USERNAME & ONLINE TEXT */}
           <div>
             <h3 className="text-slate-200 font-medium text-base max-w-[180px] truncate">
               {authUser.fullName}
@@ -65,22 +68,20 @@ function ProfileHeader() {
           </div>
         </div>
 
-        {/* BUTTONS */}
         <div className="flex gap-4 items-center">
-          {/* LOGOUT BTN */}
           <button
+            type="button"
             className="text-slate-400 hover:text-slate-200 transition-colors"
             onClick={LogOut}
           >
             <LogOutIcon className="size-5" />
           </button>
 
-          {/* SOUND TOGGLE BTN */}
           <button
+            type="button"
             className="text-slate-400 hover:text-slate-200 transition-colors"
             onClick={() => {
-              // play click sound before toggling
-              mouseClickSound.currentTime = 0; // reset to start
+              mouseClickSound.currentTime = 0;
               mouseClickSound.play().catch((error) => console.log("Audio play failed:", error));
               toggleSound();
             }}
@@ -96,4 +97,5 @@ function ProfileHeader() {
     </div>
   );
 }
+
 export default ProfileHeader;
